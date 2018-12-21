@@ -10,7 +10,7 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--enable-proposed-api", "ra-lsp", "--enableProposedApi", "ra-lsp"],
             "outFiles": ["${workspaceFolder}/out/**/*.js"],
             "preLaunchTask": "npm: watch"
         },

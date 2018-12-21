@@ -317,7 +317,24 @@ impl Analysis {
     pub fn extend_selection(&self, frange: FileRange) -> TextRange {
         extend_selection::extend_selection(&self.db, frange)
     }
-
+    pub fn selection_ranges(&self, position: FilePosition) -> Vec<TextRange> {
+        let file = self.file_syntax(position.file_id);
+        let mut res = Vec::new();
+        let mut range = TextRange::offset_len(position.offset, 0.into());
+        loop {
+            let frange = FileRange {
+                file_id: position.file_id,
+                range: range,
+            };
+            let r = extend_selection::extend_selection(&*self.db, frange);
+            if r == range {
+                break;
+            }
+            res.push(r);
+            range = r;
+        }
+        res
+    }
     /// Returns position of the mathcing brace (all types of braces are
     /// supported).
     pub fn matching_brace(&self, file: &SourceFile, offset: TextUnit) -> Option<TextUnit> {
