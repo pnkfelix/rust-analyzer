@@ -1,4 +1,3 @@
-use hir::db::HirDatabase;
 use ra_syntax::{
     ast::{self, AstNode, AttrsOwner},
     SyntaxKind::{WHITESPACE, COMMENT},
@@ -7,7 +6,7 @@ use ra_syntax::{
 
 use crate::{AssistCtx, Assist};
 
-pub(crate) fn add_derive(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn add_derive(ctx: AssistCtx) -> Option<Assist> {
     let nominal = ctx.node_at_offset::<ast::NominalDef>()?;
     let node_start = derive_insertion_offset(nominal)?;
     ctx.build("add `#[derive]`", |edit| {

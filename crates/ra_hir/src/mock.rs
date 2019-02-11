@@ -25,6 +25,12 @@ pub struct MockDatabase {
     files: FxHashMap<String, FileId>,
 }
 
+impl AsRef<dyn db::PersistentHirDatabase> for MockDatabase {
+    fn as_ref(&self) -> &(dyn db::PersistentHirDatabase + 'static) {
+        self
+    }
+}
+
 impl panic::RefUnwindSafe for MockDatabase {}
 
 impl MockDatabase {

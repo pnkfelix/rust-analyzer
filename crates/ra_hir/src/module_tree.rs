@@ -20,7 +20,7 @@ use crate::{
 
 impl ModuleSource {
     pub(crate) fn new(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         file_id: HirFileId,
         decl_id: Option<SourceFileItemId>,
     ) -> ModuleSource {
@@ -48,7 +48,7 @@ pub struct Submodule {
 
 impl Submodule {
     pub(crate) fn submodules_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         file_id: HirFileId,
         decl_id: Option<SourceFileItemId>,
     ) -> Arc<Vec<Submodule>> {
@@ -135,7 +135,7 @@ struct LinkData {
 
 impl ModuleTree {
     pub(crate) fn module_tree_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         krate: Crate,
     ) -> Arc<ModuleTree> {
         db.check_canceled();
@@ -158,7 +158,7 @@ impl ModuleTree {
         Some(res)
     }
 
-    fn init_crate(&mut self, db: &impl PersistentHirDatabase, krate: Crate) {
+    fn init_crate(&mut self, db: &dyn PersistentHirDatabase, krate: Crate) {
         let crate_graph = db.crate_graph();
         let file_id = crate_graph.crate_root(krate.crate_id);
         let source_root_id = db.file_source_root(file_id);
@@ -169,7 +169,7 @@ impl ModuleTree {
 
     fn init_subtree(
         &mut self,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         source_root: &SourceRoot,
         parent: Option<LinkId>,
         file_id: HirFileId,
@@ -257,14 +257,14 @@ impl ModuleId {
     pub(crate) fn problems(
         self,
         tree: &ModuleTree,
-        db: &impl HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Vec<(TreeArc<SyntaxNode>, Problem)> {
         tree.mods[self]
             .children
             .iter()
             .filter_map(|&link| {
                 let p = tree.links[link].problem.clone()?;
-                let s = link.source(tree, db);
+                let s = link.source(tree, db.as_ref());
                 let s = s.name().unwrap().syntax().to_owned();
                 Some((s, p))
             })
@@ -282,7 +282,7 @@ impl LinkId {
     pub(crate) fn source(
         self,
         tree: &ModuleTree,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
     ) -> TreeArc<ast::Module> {
         let syntax_node = db.file_item(tree.links[self].source);
         ast::Module::cast(&syntax_node).unwrap().to_owned()
@@ -290,7 +290,7 @@ impl LinkId {
 }
 
 fn resolve_submodule(
-    db: &impl PersistentHirDatabase,
+    db: &dyn PersistentHirDatabase,
     file_id: HirFileId,
     name: &Name,
     is_root: bool,

@@ -1,4 +1,3 @@
-use hir::db::HirDatabase;
 use ra_syntax::{
     ast::{self, AstNode},
     SyntaxKind::{
@@ -8,7 +7,7 @@ use ra_syntax::{
 
 use crate::{AssistCtx, Assist};
 
-pub(crate) fn introduce_variable(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn introduce_variable(ctx: AssistCtx) -> Option<Assist> {
     let node = ctx.covering_node();
     if !valid_covering_node(node) {
         return None;

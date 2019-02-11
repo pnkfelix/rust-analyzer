@@ -23,7 +23,7 @@ impl Into<String> for Documentation {
 }
 
 pub trait Docs {
-    fn docs(&self, db: &impl HirDatabase) -> Option<Documentation>;
+    fn docs(&self, db: &dyn HirDatabase) -> Option<Documentation>;
 }
 
 pub(crate) fn docs_from_ast(node: &impl ast::DocCommentsOwner) -> Option<Documentation> {

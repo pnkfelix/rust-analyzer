@@ -35,7 +35,7 @@ impl_froms!(GenericDef: Function, Struct, Enum, Trait, Type);
 
 impl GenericParams {
     pub(crate) fn generic_params_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         def: GenericDef,
     ) -> Arc<GenericParams> {
         let mut generics = GenericParams::default();

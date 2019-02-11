@@ -42,7 +42,7 @@ pub struct CrateImplBlocks {
 impl CrateImplBlocks {
     pub fn lookup_impl_blocks<'a>(
         &'a self,
-        db: &'a impl HirDatabase,
+        db: &'a dyn HirDatabase,
         ty: &Ty,
     ) -> impl Iterator<Item = (Module, ImplBlock)> + 'a {
         let fingerprint = TyFingerprint::for_impl(ty);
@@ -57,7 +57,7 @@ impl CrateImplBlocks {
 
     pub fn lookup_impl_blocks_for_trait<'a>(
         &'a self,
-        db: &'a impl HirDatabase,
+        db: &'a dyn HirDatabase,
         tr: &Trait,
     ) -> impl Iterator<Item = (Module, ImplBlock)> + 'a {
         let id = tr.id;
@@ -70,7 +70,7 @@ impl CrateImplBlocks {
         )
     }
 
-    fn collect_recursive(&mut self, db: &impl HirDatabase, module: &Module) {
+    fn collect_recursive(&mut self, db: &dyn HirDatabase, module: &Module) {
         let module_impl_blocks = db.impls_in_module(module.clone());
 
         for (impl_id, _) in module_impl_blocks.impls.iter() {
@@ -93,28 +93,25 @@ impl CrateImplBlocks {
             }
         }
 
-        for child in module.children(db) {
+        for child in module.children(db.as_ref()) {
             self.collect_recursive(db, &child);
         }
     }
 
-    pub(crate) fn impls_in_crate_query(
-        db: &impl HirDatabase,
-        krate: Crate,
-    ) -> Arc<CrateImplBlocks> {
+    pub(crate) fn impls_in_crate_query(db: &dyn HirDatabase, krate: Crate) -> Arc<CrateImplBlocks> {
         let mut crate_impl_blocks = CrateImplBlocks {
             krate,
             impls: FxHashMap::default(),
             impls_by_trait: FxHashMap::default(),
         };
-        if let Some(module) = krate.root_module(db) {
+        if let Some(module) = krate.root_module(db.as_ref()) {
             crate_impl_blocks.collect_recursive(db, &module);
         }
         Arc::new(crate_impl_blocks)
     }
 }
 
-fn def_crate(db: &impl HirDatabase, ty: &Ty) -> Option<Crate> {
+fn def_crate(db: &dyn HirDatabase, ty: &Ty) -> Option<Crate> {
     match ty {
         Ty::Adt { def_id, .. } => def_id.krate(db),
         _ => None,
@@ -125,7 +122,7 @@ impl Ty {
     // TODO: cache this as a query?
     // - if so, what signature? (TyFingerprint, Name)?
     // - or maybe cache all names and def_ids of methods per fingerprint?
-    pub fn lookup_method(self, db: &impl HirDatabase, name: &Name) -> Option<Function> {
+    pub fn lookup_method(self, db: &dyn HirDatabase, name: &Name) -> Option<Function> {
         self.iterate_methods(db, |f| {
             let sig = f.signature(db);
             if sig.name() == name && sig.has_self_param() {
@@ -140,7 +137,7 @@ impl Ty {
     // complicated with all the cancelable operations
     pub fn iterate_methods<T>(
         self,
-        db: &impl HirDatabase,
+        db: &dyn HirDatabase,
         mut callback: impl FnMut(Function) -> Option<T>,
     ) -> Option<T> {
         // For method calls, rust first does any number of autoderef, and then one

@@ -1,4 +1,3 @@
-use hir::db::HirDatabase;
 use ra_syntax::{
     ast, AstNode, SyntaxNode, Direction, TextRange,
     SyntaxKind::{ PATH, PATH_SEGMENT, COLONCOLON, COMMA }
@@ -480,7 +479,7 @@ fn make_assist_add_nested_import(
     }
 }
 
-pub(crate) fn auto_import(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn auto_import(ctx: AssistCtx) -> Option<Assist> {
     let node = ctx.covering_node();
     let current_file = node.ancestors().find_map(ast::SourceFile::cast)?;
 

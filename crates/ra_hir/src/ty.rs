@@ -301,7 +301,7 @@ pub struct FnSig {
 }
 
 impl Ty {
-    pub(crate) fn from_hir(db: &impl HirDatabase, resolver: &Resolver, type_ref: &TypeRef) -> Self {
+    pub(crate) fn from_hir(db: &dyn HirDatabase, resolver: &Resolver, type_ref: &TypeRef) -> Self {
         match type_ref {
             TypeRef::Never => Ty::Never,
             TypeRef::Tuple(inner) => {
@@ -339,7 +339,7 @@ impl Ty {
         }
     }
 
-    pub(crate) fn from_hir_path(db: &impl HirDatabase, resolver: &Resolver, path: &Path) -> Self {
+    pub(crate) fn from_hir_path(db: &dyn HirDatabase, resolver: &Resolver, path: &Path) -> Self {
         if let Some(name) = path.as_ident() {
             // TODO handle primitive type names in resolver as well?
             if let Some(int_ty) = primitive::UncertainIntTy::from_name(name) {
@@ -393,7 +393,7 @@ impl Ty {
     /// Collect generic arguments from a path into a `Substs`. See also
     /// `create_substs_for_ast_path` and `def_to_ty` in rustc.
     fn substs_from_path(
-        db: &impl HirDatabase,
+        db: &dyn HirDatabase,
         resolver: &Resolver,
         path: &Path,
         resolved: TypableDef,
@@ -401,9 +401,9 @@ impl Ty {
         let mut substs = Vec::new();
         let last = path.segments.last().expect("path should have at least one segment");
         let (def_generics, segment) = match resolved {
-            TypableDef::Function(func) => (func.generic_params(db), last),
-            TypableDef::Struct(s) => (s.generic_params(db), last),
-            TypableDef::Enum(e) => (e.generic_params(db), last),
+            TypableDef::Function(func) => (func.generic_params(db.as_ref()), last),
+            TypableDef::Struct(s) => (s.generic_params(db.as_ref()), last),
+            TypableDef::Enum(e) => (e.generic_params(db.as_ref()), last),
             TypableDef::EnumVariant(var) => {
                 // the generic args for an enum variant may be either specified
                 // on the segment referring to the enum, or on the segment
@@ -418,7 +418,7 @@ impl Ty {
                     // Option::None::<T>
                     last
                 };
-                (var.parent_enum(db).generic_params(db), segment)
+                (var.parent_enum(db.as_ref()).generic_params(db.as_ref()), segment)
             }
         };
         // substs_from_path
@@ -652,10 +652,10 @@ impl fmt::Display for Ty {
 
 /// Compute the declared type of a function. This should not need to look at the
 /// function body.
-fn type_for_fn(db: &impl HirDatabase, def: Function) -> Ty {
+fn type_for_fn(db: &dyn HirDatabase, def: Function) -> Ty {
     let signature = def.signature(db);
     let resolver = def.resolver(db);
-    let generics = def.generic_params(db);
+    let generics = def.generic_params(db.as_ref());
     let name = def.name(db);
     let input =
         signature.params().iter().map(|tr| Ty::from_hir(db, &resolver, tr)).collect::<Vec<_>>();
@@ -669,8 +669,8 @@ fn make_substs(generics: &GenericParams) -> Substs {
     Substs(generics.params.iter().map(|_p| Ty::Unknown).collect::<Vec<_>>().into())
 }
 
-fn type_for_struct(db: &impl HirDatabase, s: Struct) -> Ty {
-    let generics = s.generic_params(db);
+fn type_for_struct(db: &dyn HirDatabase, s: Struct) -> Ty {
+    let generics = s.generic_params(db.as_ref());
     Ty::Adt {
         def_id: s.into(),
         name: s.name(db).unwrap_or_else(Name::missing),
@@ -678,8 +678,8 @@ fn type_for_struct(db: &impl HirDatabase, s: Struct) -> Ty {
     }
 }
 
-pub(crate) fn type_for_enum(db: &impl HirDatabase, s: Enum) -> Ty {
-    let generics = s.generic_params(db);
+pub(crate) fn type_for_enum(db: &dyn HirDatabase, s: Enum) -> Ty {
+    let generics = s.generic_params(db.as_ref());
     Ty::Adt {
         def_id: s.into(),
         name: s.name(db).unwrap_or_else(Name::missing),
@@ -687,8 +687,8 @@ pub(crate) fn type_for_enum(db: &impl HirDatabase, s: Enum) -> Ty {
     }
 }
 
-pub(crate) fn type_for_enum_variant(db: &impl HirDatabase, ev: EnumVariant) -> Ty {
-    let enum_parent = ev.parent_enum(db);
+pub(crate) fn type_for_enum_variant(db: &dyn HirDatabase, ev: EnumVariant) -> Ty {
+    let enum_parent = ev.parent_enum(db.as_ref());
 
     type_for_enum(db, enum_parent)
 }
@@ -719,7 +719,7 @@ impl From<ModuleDef> for Option<TypableDef> {
     }
 }
 
-pub(super) fn type_for_def(db: &impl HirDatabase, def: TypableDef) -> Ty {
+pub(super) fn type_for_def(db: &dyn HirDatabase, def: TypableDef) -> Ty {
     match def {
         TypableDef::Function(f) => type_for_fn(db, f),
         TypableDef::Struct(s) => type_for_struct(db, s),
@@ -728,13 +728,13 @@ pub(super) fn type_for_def(db: &impl HirDatabase, def: TypableDef) -> Ty {
     }
 }
 
-pub(super) fn type_for_field(db: &impl HirDatabase, field: StructField) -> Ty {
+pub(super) fn type_for_field(db: &dyn HirDatabase, field: StructField) -> Ty {
     let parent_def = field.parent_def(db);
     let resolver = match parent_def {
         VariantDef::Struct(it) => it.resolver(db),
-        VariantDef::EnumVariant(it) => it.parent_enum(db).resolver(db),
+        VariantDef::EnumVariant(it) => it.parent_enum(db.as_ref()).resolver(db),
     };
-    let var_data = parent_def.variant_data(db);
+    let var_data = parent_def.variant_data(db.as_ref());
     let type_ref = &var_data.fields().unwrap()[field.id].type_ref;
     Ty::from_hir(db, &resolver, type_ref)
 }
@@ -777,8 +777,8 @@ impl Index<PatId> for InferenceResult {
 
 /// The inference context contains all information needed during type inference.
 #[derive(Clone, Debug)]
-struct InferenceContext<'a, D: HirDatabase> {
-    db: &'a D,
+struct InferenceContext<'a> {
+    db: &'a dyn HirDatabase,
     body: Arc<Body>,
     resolver: Resolver,
     var_unification_table: InPlaceUnificationTable<TypeVarId>,
@@ -868,8 +868,8 @@ fn binary_op_rhs_expectation(op: BinaryOp, lhs_ty: Ty) -> Ty {
     }
 }
 
-impl<'a, D: HirDatabase> InferenceContext<'a, D> {
-    fn new(db: &'a D, body: Arc<Body>, resolver: Resolver) -> Self {
+impl<'a> InferenceContext<'a> {
+    fn new(db: &'a dyn HirDatabase, body: Arc<Body>, resolver: Resolver) -> Self {
         InferenceContext {
             method_resolutions: FxHashMap::default(),
             field_resolutions: FxHashMap::default(),
@@ -1639,7 +1639,7 @@ impl<'a, D: HirDatabase> InferenceContext<'a, D> {
     }
 }
 
-pub fn infer(db: &impl HirDatabase, func: Function) -> Arc<InferenceResult> {
+pub fn infer(db: &dyn HirDatabase, func: Function) -> Arc<InferenceResult> {
     db.check_canceled();
     let body = func.body(db);
     let resolver = func.resolver(db);

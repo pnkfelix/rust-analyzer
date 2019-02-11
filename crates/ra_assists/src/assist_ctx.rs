@@ -45,14 +45,14 @@ pub(crate) enum Assist {
 /// moment, because the LSP API is pretty awkward in this place, and it's much
 /// easier to just compute the edit eagerly :-)#[derive(Debug, Clone)]
 #[derive(Debug)]
-pub(crate) struct AssistCtx<'a, DB> {
-    pub(crate) db: &'a DB,
+pub(crate) struct AssistCtx<'a> {
+    pub(crate) db: &'a dyn HirDatabase,
     pub(crate) frange: FileRange,
     source_file: &'a SourceFile,
     should_compute_edit: bool,
 }
 
-impl<'a, DB> Clone for AssistCtx<'a, DB> {
+impl<'a> Clone for AssistCtx<'a> {
     fn clone(&self) -> Self {
         AssistCtx {
             db: self.db,
@@ -63,10 +63,15 @@ impl<'a, DB> Clone for AssistCtx<'a, DB> {
     }
 }
 
-impl<'a, DB: HirDatabase> AssistCtx<'a, DB> {
-    pub(crate) fn with_ctx<F, T>(db: &DB, frange: FileRange, should_compute_edit: bool, f: F) -> T
+impl<'a> AssistCtx<'a> {
+    pub(crate) fn with_ctx<F, T>(
+        db: &dyn HirDatabase,
+        frange: FileRange,
+        should_compute_edit: bool,
+        f: F,
+    ) -> T
     where
-        F: FnOnce(AssistCtx<DB>) -> T,
+        F: FnOnce(AssistCtx) -> T,
     {
         let source_file = &db.parse(frange.file_id);
         let ctx = AssistCtx { db, frange, source_file, should_compute_edit };

@@ -77,11 +77,11 @@ impl ImplBlock {
         self.impl_data().target_type()
     }
 
-    pub fn target_ty(&self, db: &impl HirDatabase) -> Ty {
+    pub fn target_ty(&self, db: &dyn HirDatabase) -> Ty {
         Ty::from_hir(db, &self.resolver(db), self.target_type())
     }
 
-    pub fn target_trait(&self, db: &impl HirDatabase) -> Option<Trait> {
+    pub fn target_trait(&self, db: &dyn HirDatabase) -> Option<Trait> {
         if let Some(TypeRef::Path(path)) = self.target_trait_ref() {
             let resolver = self.resolver(db);
             if let Some(Resolution::Def(ModuleDef::Trait(tr))) =
@@ -97,7 +97,7 @@ impl ImplBlock {
         self.impl_data().items()
     }
 
-    pub fn resolver(&self, db: &impl HirDatabase) -> Resolver {
+    pub fn resolver(&self, db: &dyn HirDatabase) -> Resolver {
         let r = self.module().resolver(db);
         // TODO: add generics
         let r = r.push_impl_block_scope(self.clone());
@@ -114,7 +114,7 @@ pub struct ImplData {
 
 impl ImplData {
     pub(crate) fn from_ast(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         file_id: HirFileId,
         module: Module,
         node: &ast::ImplBlock,
@@ -188,7 +188,7 @@ pub struct ModuleImplBlocks {
 
 impl ModuleImplBlocks {
     fn collect(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
         source_map: &mut ImplSourceMap,
     ) -> Self {
@@ -222,7 +222,7 @@ impl ModuleImplBlocks {
 }
 
 pub(crate) fn impls_in_module_with_source_map_query(
-    db: &impl PersistentHirDatabase,
+    db: &dyn PersistentHirDatabase,
     module: Module,
 ) -> (Arc<ModuleImplBlocks>, Arc<ImplSourceMap>) {
     let mut source_map = ImplSourceMap::default();
@@ -233,14 +233,14 @@ pub(crate) fn impls_in_module_with_source_map_query(
 }
 
 pub(crate) fn impls_in_module(
-    db: &impl PersistentHirDatabase,
+    db: &dyn PersistentHirDatabase,
     module: Module,
 ) -> Arc<ModuleImplBlocks> {
     db.impls_in_module_with_source_map(module).0
 }
 
 pub(crate) fn impls_in_module_source_map_query(
-    db: &impl PersistentHirDatabase,
+    db: &dyn PersistentHirDatabase,
     module: Module,
 ) -> Arc<ImplSourceMap> {
     db.impls_in_module_with_source_map(module).1

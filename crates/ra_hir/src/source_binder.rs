@@ -20,13 +20,13 @@ use crate::{
 };
 
 /// Locates the module by `FileId`. Picks topmost module in the file.
-pub fn module_from_file_id(db: &impl HirDatabase, file_id: FileId) -> Option<Module> {
+pub fn module_from_file_id(db: &dyn HirDatabase, file_id: FileId) -> Option<Module> {
     module_from_source(db, file_id.into(), None)
 }
 
 /// Locates the child module by `mod child;` declaration.
 pub fn module_from_declaration(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: FileId,
     decl: &ast::Module,
 ) -> Option<Module> {
@@ -39,7 +39,7 @@ pub fn module_from_declaration(
 }
 
 /// Locates the module by position in the source code.
-pub fn module_from_position(db: &impl HirDatabase, position: FilePosition) -> Option<Module> {
+pub fn module_from_position(db: &dyn HirDatabase, position: FilePosition) -> Option<Module> {
     let file = db.parse(position.file_id);
     match find_node_at_offset::<ast::Module>(file.syntax(), position.offset) {
         Some(m) if !m.has_semi() => module_from_inline(db, position.file_id.into(), m),
@@ -48,7 +48,7 @@ pub fn module_from_position(db: &impl HirDatabase, position: FilePosition) -> Op
 }
 
 fn module_from_inline(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: FileId,
     module: &ast::Module,
 ) -> Option<Module> {
@@ -61,7 +61,7 @@ fn module_from_inline(
 
 /// Locates the module by child syntax element within the module
 pub fn module_from_child_node(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: FileId,
     child: &SyntaxNode,
 ) -> Option<Module> {
@@ -73,7 +73,7 @@ pub fn module_from_child_node(
 }
 
 fn module_from_source(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: HirFileId,
     decl_id: Option<SourceFileItemId>,
 ) -> Option<Module> {
@@ -87,14 +87,14 @@ fn module_from_source(
     )
 }
 
-pub fn function_from_position(db: &impl HirDatabase, position: FilePosition) -> Option<Function> {
+pub fn function_from_position(db: &dyn HirDatabase, position: FilePosition) -> Option<Function> {
     let file = db.parse(position.file_id);
     let fn_def = find_node_at_offset::<ast::FnDef>(file.syntax(), position.offset)?;
     function_from_source(db, position.file_id, fn_def)
 }
 
 pub fn function_from_source(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: FileId,
     fn_def: &ast::FnDef,
 ) -> Option<Function> {
@@ -103,19 +103,15 @@ pub fn function_from_source(
     Some(res)
 }
 
-pub fn function_from_module(
-    db: &impl HirDatabase,
-    module: Module,
-    fn_def: &ast::FnDef,
-) -> Function {
-    let (file_id, _) = module.definition_source(db);
+pub fn function_from_module(db: &dyn HirDatabase, module: Module, fn_def: &ast::FnDef) -> Function {
+    let (file_id, _) = module.definition_source(db.as_ref());
     let file_id = file_id.into();
-    let ctx = LocationCtx::new(db, module, file_id);
+    let ctx = LocationCtx::new(db.as_ref(), module, file_id);
     Function { id: ctx.to_def(fn_def) }
 }
 
 pub fn function_from_child_node(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     file_id: FileId,
     node: &SyntaxNode,
 ) -> Option<Function> {
@@ -124,35 +120,31 @@ pub fn function_from_child_node(
 }
 
 pub fn struct_from_module(
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     module: Module,
     struct_def: &ast::StructDef,
 ) -> Struct {
-    let (file_id, _) = module.definition_source(db);
+    let (file_id, _) = module.definition_source(db.as_ref());
     let file_id = file_id.into();
-    let ctx = LocationCtx::new(db, module, file_id);
+    let ctx = LocationCtx::new(db.as_ref(), module, file_id);
     Struct { id: ctx.to_def(struct_def) }
 }
 
-pub fn enum_from_module(db: &impl HirDatabase, module: Module, enum_def: &ast::EnumDef) -> Enum {
-    let (file_id, _) = module.definition_source(db);
+pub fn enum_from_module(db: &dyn HirDatabase, module: Module, enum_def: &ast::EnumDef) -> Enum {
+    let (file_id, _) = module.definition_source(db.as_ref());
     let file_id = file_id.into();
-    let ctx = LocationCtx::new(db, module, file_id);
+    let ctx = LocationCtx::new(db.as_ref(), module, file_id);
     Enum { id: ctx.to_def(enum_def) }
 }
 
-pub fn trait_from_module(
-    db: &impl HirDatabase,
-    module: Module,
-    trait_def: &ast::TraitDef,
-) -> Trait {
-    let (file_id, _) = module.definition_source(db);
+pub fn trait_from_module(db: &dyn HirDatabase, module: Module, trait_def: &ast::TraitDef) -> Trait {
+    let (file_id, _) = module.definition_source(db.as_ref());
     let file_id = file_id.into();
-    let ctx = LocationCtx::new(db, module, file_id);
+    let ctx = LocationCtx::new(db.as_ref(), module, file_id);
     Trait { id: ctx.to_def(trait_def) }
 }
 
-pub fn macro_symbols(db: &impl HirDatabase, file_id: FileId) -> Vec<(SmolStr, TextRange)> {
+pub fn macro_symbols(db: &dyn HirDatabase, file_id: FileId) -> Vec<(SmolStr, TextRange)> {
     let module = match module_from_file_id(db, file_id) {
         Some(it) => it,
         None => return Vec::new(),
@@ -168,10 +160,10 @@ pub fn macro_symbols(db: &impl HirDatabase, file_id: FileId) -> Vec<(SmolStr, Te
             ModuleDef::Trait(it) => Some(it),
             _ => None,
         })
-        .filter_map(|it| it.source(db).0.as_macro_call_id())
+        .filter_map(|it| it.source(db.as_ref()).0.as_macro_call_id())
     {
         if let Some(exp) = db.expand_macro_invocation(macro_call_id) {
-            let loc = macro_call_id.loc(db);
+            let loc = macro_call_id.loc(db.as_ref());
             let syntax = db.file_item(loc.source_item_id);
             let macro_call = ast::MacroCall::cast(&syntax).unwrap();
             let off = macro_call.token_tree().unwrap().syntax().range().start();
@@ -190,7 +182,7 @@ pub fn macro_symbols(db: &impl HirDatabase, file_id: FileId) -> Vec<(SmolStr, Te
     res
 }
 
-pub fn resolver_for_position(db: &impl HirDatabase, position: FilePosition) -> Resolver {
+pub fn resolver_for_position(db: &dyn HirDatabase, position: FilePosition) -> Resolver {
     let file_id = position.file_id;
     let file = db.parse(file_id);
     find_leaf_at_offset(file.syntax(), position.offset)
@@ -224,7 +216,7 @@ pub fn resolver_for_position(db: &impl HirDatabase, position: FilePosition) -> R
         .unwrap_or_default()
 }
 
-pub fn resolver_for_node(db: &impl HirDatabase, file_id: FileId, node: &SyntaxNode) -> Resolver {
+pub fn resolver_for_node(db: &dyn HirDatabase, file_id: FileId, node: &SyntaxNode) -> Resolver {
     node.ancestors()
         .find_map(|node| {
             if ast::Expr::cast(node).is_some() || ast::Block::cast(node).is_some() {

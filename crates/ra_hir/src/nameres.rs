@@ -148,8 +148,8 @@ impl<T> PerNs<T> {
     }
 }
 
-struct Resolver<'a, DB> {
-    db: &'a DB,
+struct Resolver<'a> {
+    db: &'a dyn PersistentHirDatabase,
     input: &'a FxHashMap<ModuleId, Arc<LoweredModule>>,
     krate: Crate,
     module_tree: Arc<ModuleTree>,
@@ -159,15 +159,12 @@ struct Resolver<'a, DB> {
     result: ItemMap,
 }
 
-impl<'a, DB> Resolver<'a, DB>
-where
-    DB: PersistentHirDatabase,
-{
+impl<'a> Resolver<'a> {
     fn new(
-        db: &'a DB,
+        db: &'a dyn PersistentHirDatabase,
         input: &'a FxHashMap<ModuleId, Arc<LoweredModule>>,
         krate: Crate,
-    ) -> Resolver<'a, DB> {
+    ) -> Resolver<'a> {
         let module_tree = db.module_tree(krate);
         Resolver {
             db,
@@ -410,7 +407,7 @@ enum ReachedFixedPoint {
 }
 
 impl ItemMap {
-    pub(crate) fn item_map_query(db: &impl PersistentHirDatabase, krate: Crate) -> Arc<ItemMap> {
+    pub(crate) fn item_map_query(db: &dyn PersistentHirDatabase, krate: Crate) -> Arc<ItemMap> {
         let start = time::Instant::now();
         let module_tree = db.module_tree(krate);
         let input = module_tree
@@ -427,7 +424,7 @@ impl ItemMap {
 
     pub(crate) fn resolve_path(
         &self,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         original_module: Module,
         path: &Path,
     ) -> PerNs<ModuleDef> {
@@ -446,7 +443,7 @@ impl ItemMap {
     // the result.
     fn resolve_path_fp(
         &self,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         original_module: Module,
         path: &Path,
     ) -> (PerNs<ModuleDef>, ReachedFixedPoint) {

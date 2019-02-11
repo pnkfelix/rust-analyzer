@@ -86,7 +86,7 @@ mod split_import;
 mod remove_dbg;
 mod auto_import;
 
-fn all_assists<DB: HirDatabase>() -> &'static [fn(AssistCtx<DB>) -> Option<Assist>] {
+fn all_assists() -> &'static [fn(AssistCtx) -> Option<Assist>] {
     &[
         add_derive::add_derive,
         add_impl::add_impl,
@@ -114,11 +114,7 @@ mod helpers {
 
     use crate::{AssistCtx, Assist};
 
-    pub(crate) fn check_assist(
-        assist: fn(AssistCtx<MockDatabase>) -> Option<Assist>,
-        before: &str,
-        after: &str,
-    ) {
+    pub(crate) fn check_assist(assist: fn(AssistCtx) -> Option<Assist>, before: &str, after: &str) {
         let (before_cursor_pos, before) = extract_offset(before);
         let (db, _source_root, file_id) = MockDatabase::with_single_file(&before);
         let frange =
@@ -143,7 +139,7 @@ mod helpers {
     }
 
     pub(crate) fn check_assist_range(
-        assist: fn(AssistCtx<MockDatabase>) -> Option<Assist>,
+        assist: fn(AssistCtx) -> Option<Assist>,
         before: &str,
         after: &str,
     ) {
@@ -165,7 +161,7 @@ mod helpers {
     }
 
     pub(crate) fn check_assist_target(
-        assist: fn(AssistCtx<MockDatabase>) -> Option<Assist>,
+        assist: fn(AssistCtx) -> Option<Assist>,
         before: &str,
         target: &str,
     ) {
@@ -185,7 +181,7 @@ mod helpers {
     }
 
     pub(crate) fn check_assist_range_target(
-        assist: fn(AssistCtx<MockDatabase>) -> Option<Assist>,
+        assist: fn(AssistCtx) -> Option<Assist>,
         before: &str,
         target: &str,
     ) {
@@ -204,7 +200,7 @@ mod helpers {
     }
 
     pub(crate) fn check_assist_not_applicable(
-        assist: fn(AssistCtx<MockDatabase>) -> Option<Assist>,
+        assist: fn(AssistCtx) -> Option<Assist>,
         before: &str,
     ) {
         let (before_cursor_pos, before) = extract_offset(before);

@@ -78,20 +78,20 @@ impl Body {
         self.pats.iter()
     }
 
-    pub fn syntax_mapping(&self, db: &impl HirDatabase) -> Arc<BodySyntaxMapping> {
+    pub fn syntax_mapping(&self, db: &dyn HirDatabase) -> Arc<BodySyntaxMapping> {
         db.body_syntax_mapping(self.owner)
     }
 }
 
 // needs arbitrary_self_types to be a method... or maybe move to the def?
-pub fn resolver_for_expr(body: Arc<Body>, db: &impl HirDatabase, expr_id: ExprId) -> Resolver {
+pub fn resolver_for_expr(body: Arc<Body>, db: &dyn HirDatabase, expr_id: ExprId) -> Resolver {
     let scopes = db.expr_scopes(body.owner);
     resolver_for_scope(body, db, scopes.scope_for(expr_id))
 }
 
 pub fn resolver_for_scope(
     body: Arc<Body>,
-    db: &impl HirDatabase,
+    db: &dyn HirDatabase,
     scope_id: Option<scope::ScopeId>,
 ) -> Resolver {
     let mut r = body.owner.resolver(db);
@@ -466,7 +466,7 @@ impl Pat {
 
 // Queries
 
-pub(crate) fn body_hir(db: &impl HirDatabase, func: Function) -> Arc<Body> {
+pub(crate) fn body_hir(db: &dyn HirDatabase, func: Function) -> Arc<Body> {
     Arc::clone(&body_syntax_mapping(db, func).body)
 }
 
@@ -923,11 +923,11 @@ impl ExprCollector {
     }
 }
 
-pub(crate) fn body_syntax_mapping(db: &impl HirDatabase, func: Function) -> Arc<BodySyntaxMapping> {
+pub(crate) fn body_syntax_mapping(db: &dyn HirDatabase, func: Function) -> Arc<BodySyntaxMapping> {
     let mut collector = ExprCollector::new(func);
 
     // TODO: consts, etc.
-    collector.collect_fn_body(&func.source(db).1);
+    collector.collect_fn_body(&func.source(db.as_ref()).1);
 
     Arc::new(collector.into_body_syntax_mapping())
 }

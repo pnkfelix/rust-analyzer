@@ -80,7 +80,7 @@ pub trait PersistentHirDatabase: SourceDatabase + AsRef<HirInterner> {
 }
 
 #[salsa::query_group(HirDatabaseStorage)]
-pub trait HirDatabase: PersistentHirDatabase {
+pub trait HirDatabase: PersistentHirDatabase + AsRef<dyn PersistentHirDatabase> {
     #[salsa::invoke(ExprScopes::expr_scopes_query)]
     fn expr_scopes(&self, func: Function) -> Arc<ExprScopes>;
 

@@ -1,5 +1,4 @@
 use join_to_string::join;
-use hir::db::HirDatabase;
 use ra_syntax::{
     ast::{self, AstNode, AstToken, NameOwner, TypeParamsOwner},
     TextUnit,
@@ -7,7 +6,7 @@ use ra_syntax::{
 
 use crate::{AssistCtx, Assist};
 
-pub(crate) fn add_impl(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn add_impl(ctx: AssistCtx) -> Option<Assist> {
     let nominal = ctx.node_at_offset::<ast::NominalDef>()?;
     let name = nominal.name()?;
     ctx.build("add impl", |edit| {

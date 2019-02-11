@@ -13,7 +13,7 @@ impl Function {
     // TODO impl_block should probably also be part of the code model API?
 
     /// The containing impl block, if this is a method.
-    pub(crate) fn impl_block(&self, db: &impl HirDatabase) -> Option<ImplBlock> {
+    pub(crate) fn impl_block(&self, db: &dyn HirDatabase) -> Option<ImplBlock> {
         let module_impls = db.impls_in_module(self.module(db));
         ImplBlock::containing(module_impls, (*self).into())
     }
@@ -21,7 +21,7 @@ impl Function {
 
 impl FnSignature {
     pub(crate) fn fn_signature_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         func: Function,
     ) -> Arc<FnSignature> {
         let (_, node) = func.source(db);

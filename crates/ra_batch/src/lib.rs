@@ -24,6 +24,12 @@ pub struct BatchDatabase {
     interner: Arc<HirInterner>,
 }
 
+impl AsRef<dyn db::PersistentHirDatabase> for BatchDatabase {
+    fn as_ref(&self) -> &(dyn db::PersistentHirDatabase + 'static) {
+        self
+    }
+}
+
 impl salsa::Database for BatchDatabase {
     fn salsa_runtime(&self) -> &salsa::Runtime<BatchDatabase> {
         &self.runtime

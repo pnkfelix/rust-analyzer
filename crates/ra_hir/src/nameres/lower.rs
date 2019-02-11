@@ -60,21 +60,21 @@ impl ImportSourceMap {
 
 impl LoweredModule {
     pub(crate) fn lower_module_module_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
     ) -> Arc<LoweredModule> {
         db.lower_module(module).0
     }
 
     pub(crate) fn lower_module_source_map_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
     ) -> Arc<ImportSourceMap> {
         db.lower_module(module).1
     }
 
     pub(crate) fn lower_module_query(
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
     ) -> (Arc<LoweredModule>, Arc<ImportSourceMap>) {
         let (file_id, source) = module.definition_source(db);
@@ -103,7 +103,7 @@ impl LoweredModule {
     fn fill(
         &mut self,
         source_map: &mut ImportSourceMap,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
         file_id: HirFileId,
         items: &mut Iterator<Item = ast::ItemOrMacro>,
@@ -133,7 +133,7 @@ impl LoweredModule {
     fn add_def_id(
         &mut self,
         source_map: &mut ImportSourceMap,
-        db: &impl PersistentHirDatabase,
+        db: &dyn PersistentHirDatabase,
         module: Module,
         file_id: HirFileId,
         item: &ast::ModuleItem,

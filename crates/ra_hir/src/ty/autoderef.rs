@@ -10,11 +10,11 @@ use super::Ty;
 
 impl Ty {
     /// Iterates over the possible derefs of `ty`.
-    pub fn autoderef<'a>(self, db: &'a impl HirDatabase) -> impl Iterator<Item = Ty> + 'a {
+    pub fn autoderef<'a>(self, db: &'a dyn HirDatabase) -> impl Iterator<Item = Ty> + 'a {
         generate(Some(self), move |ty| ty.autoderef_step(db))
     }
 
-    fn autoderef_step(&self, _db: &impl HirDatabase) -> Option<Ty> {
+    fn autoderef_step(&self, _db: &dyn HirDatabase) -> Option<Ty> {
         // TODO Deref::deref
         self.builtin_deref()
     }

@@ -25,6 +25,12 @@ pub(crate) struct RootDatabase {
     pub(crate) last_gc_check: time::Instant,
 }
 
+impl AsRef<dyn hir::db::PersistentHirDatabase> for RootDatabase {
+    fn as_ref(&self) -> &(dyn hir::db::PersistentHirDatabase + 'static) {
+        self
+    }
+}
+
 impl salsa::Database for RootDatabase {
     fn salsa_runtime(&self) -> &salsa::Runtime<RootDatabase> {
         &self.runtime

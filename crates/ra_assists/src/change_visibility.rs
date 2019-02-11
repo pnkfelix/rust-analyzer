@@ -1,4 +1,3 @@
-use hir::db::HirDatabase;
 use ra_syntax::{
     AstNode, SyntaxNode, TextUnit,
     ast::{self, VisibilityOwner, NameOwner},
@@ -7,14 +6,14 @@ use ra_syntax::{
 
 use crate::{AssistCtx, Assist};
 
-pub(crate) fn change_visibility(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn change_visibility(ctx: AssistCtx) -> Option<Assist> {
     if let Some(vis) = ctx.node_at_offset::<ast::Visibility>() {
         return change_vis(ctx, vis);
     }
     add_vis(ctx)
 }
 
-fn add_vis(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+fn add_vis(ctx: AssistCtx) -> Option<Assist> {
     let item_keyword = ctx.leaf_at_offset().find(|leaf| match leaf.kind() {
         FN_KW | MOD_KW | STRUCT_KW | ENUM_KW | TRAIT_KW => true,
         _ => false,
@@ -59,7 +58,7 @@ fn vis_offset(node: &SyntaxNode) -> TextUnit {
         .unwrap_or(node.range().start())
 }
 
-fn change_vis(ctx: AssistCtx<impl HirDatabase>, vis: &ast::Visibility) -> Option<Assist> {
+fn change_vis(ctx: AssistCtx, vis: &ast::Visibility) -> Option<Assist> {
     if vis.syntax().text() == "pub" {
         return ctx.build("change to pub(crate)", |edit| {
             edit.target(vis.syntax().range());

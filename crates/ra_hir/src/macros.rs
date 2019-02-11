@@ -145,7 +145,7 @@ impl MacroExpansion {
 }
 
 pub(crate) fn expand_macro_invocation(
-    db: &impl PersistentHirDatabase,
+    db: &dyn PersistentHirDatabase,
     invoc: MacroCallId,
 ) -> Option<Arc<MacroExpansion>> {
     let loc = invoc.loc(db);

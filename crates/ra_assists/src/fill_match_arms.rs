@@ -2,13 +2,12 @@ use std::fmt::Write;
 
 use hir::{
     AdtDef, Ty, FieldSource, source_binder,
-    db::HirDatabase,
 };
 use ra_syntax::ast::{self, AstNode};
 
 use crate::{AssistCtx, Assist};
 
-pub(crate) fn fill_match_arms(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist> {
+pub(crate) fn fill_match_arms(ctx: AssistCtx) -> Option<Assist> {
     let match_expr = ctx.node_at_offset::<ast::MatchExpr>()?;
 
     // We already have some match arms, so we don't provide any assists.
@@ -35,9 +34,9 @@ pub(crate) fn fill_match_arms(ctx: AssistCtx<impl HirDatabase>) -> Option<Assist
 
     ctx.build("fill match arms", |edit| {
         let mut buf = format!("match {} {{\n", expr.syntax().text().to_string());
-        let variants = enum_def.variants(db);
+        let variants = enum_def.variants(db.as_ref());
         for variant in variants {
-            let name = match variant.name(db) {
+            let name = match variant.name(db.as_ref()) {
                 Some(it) => it,
                 None => continue,
             };

@@ -67,7 +67,7 @@ impl Resolver {
         resolution
     }
 
-    pub fn resolve_path(&self, db: &impl HirDatabase, path: &Path) -> PerNs<Resolution> {
+    pub fn resolve_path(&self, db: &dyn HirDatabase, path: &Path) -> PerNs<Resolution> {
         if let Some(name) = path.as_ident() {
             self.resolve_name(name)
         } else if path.is_self() {
@@ -77,7 +77,7 @@ impl Resolver {
                 Some(m) => m,
                 _ => return PerNs::none(),
             };
-            let module_res = item_map.resolve_path(db, module, path);
+            let module_res = item_map.resolve_path(db.as_ref(), module, path);
             module_res.map(Resolution::Def)
         }
     }
