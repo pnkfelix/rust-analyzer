@@ -62,6 +62,8 @@ use test_utils::tested_by;
 use ra_syntax::ast;
 use ra_prof::profile;
 
+use lang_api::SyntaxNode;
+
 use crate::{
     ModuleDef, Name, Crate, Module,
     DefDatabase, Path, PathKind, HirFileId, Trait,
